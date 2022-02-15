@@ -2,49 +2,74 @@ const canvas = document.getElementsByTagName("canvas")[0];
 const c = canvas.getContext("2d");
 canvas.height = "640";
 canvas.width = "640";
-const width = canvas.width; 
+const width = canvas.width;
 const height = canvas.height;
 const width_square = width / 8;
 const height_square = height / 8;
 const width_piece = 333;
 const height_piece = 334;
 const start_board = "cnbkqbnc/pppppppp/8/8/8/8/PPPPPPPP/CNBKQBNC";
-var string_board = "8/3Q/4c/3q/8/8/8/8";
+var string_board = "cnbkqbnc/c/8/8/8/8/8/CNBKQBNC";
+// var string_board = start_board
 var board = [];
-var moves = [];  
+var moves = [];
 var active;
+var prev_active;
 var active_piece;
+
+main_game_var = {
+    //current_player == 1 => zwart && current_player == 0 => wit
+    current_player: 0,
+    current_turn: 1,
+}
 
 var down = false;
-var active_piece;
 
-// canvas.addEventListener("mousedown", function(e) {
-//     down = true;
-//     canvas.style.cursor = "grabbing";
-//     set_active(e)
-//     hold_piece(e)
-// })
+Mouse = {
+    x: 0,
+    y: 0,
+    offsetX: 0,
+    offsetY: 0
+}
+
+canvas.addEventListener("mousedown", function(e) {
+    // if (active == undefined) {
+    if (!valid_move(e)) {
+        down = true;
+        canvas.style.cursor = "grabbing";
+        set_active(e)
+        hold_piece(e)
+        Mouse.x = e.clientX - canvas.getBoundingClientRect().left;
+        Mouse.y = e.clientY - canvas.getBoundingClientRect().top
+        Mouse.offsetX = e.x - canvas.getBoundingClientRect().left - (active % 8 * width_square);
+        Mouse.offsetY = e.y - canvas.getBoundingClientRect().top - (Math.floor(active / 8) * height_square);
+        console.log("mousedown");
+    }
+})
 
 window.addEventListener("mouseup", function(e) {
+    console.log("mouseup");
     down = false;
     canvas.style.cursor = "pointer";
+    check_moves()
+    move_piece(e)
 })
 
-canvas.addEventListener("click", function(e) {
-    if (active == undefined) {
-        set_active(e)
-    }
-    else{
-        move_piece(e)
-    }
-})
+// canvas.addEventListener("click", function(e) {
+//     console.log("click");
+//     if (active != undefined) {
+//         check_moves()
+//         move_piece(e)
+//     } else {
+//         set_active(e)
+//     }
+// })
 
 canvas.addEventListener("mousemove", function(e) {
-    let mouseX = e.clientX - canvas.getBoundingClientRect().left;
-    let mouseY = e.clientY - canvas.getBoundingClientRect().top
-    // if(down){
-    //     console.log(e);
-    // }
+    if (down) {
+        Mouse.x = e.clientX - canvas.getBoundingClientRect().left;
+        Mouse.y = e.clientY - canvas.getBoundingClientRect().top
+    }
 })
 
 function draw_board() {
@@ -62,15 +87,22 @@ function draw_board() {
             } else {
                 c.fillStyle = black;
             }
-            c.fillRect(i* width_square, j* height_square, width_square, height_square); 
+            c.fillRect(i * width_square, j * height_square, width_square, height_square);
         }
     }
 }
 
-function draw_active(){
-    if (board[active] != 0 || active == null) {
+function draw_grabbed() {
+    if (down) {
+        draw_piece(active_piece, Mouse.x - Mouse.offsetX, Mouse.y - Mouse.offsetY)
+    }
+    return;
+}
+
+function draw_active() {
+    if (active != undefined) {
         c.fillStyle = "#026923";
-        c.fillRect(active%8 * width_square, Math.floor(active/8)*height_square, width_square, height_square)
+        c.fillRect(active % 8 * width_square, Math.floor(active / 8) * height_square, width_square, height_square)
         draw_moves()
     }
 }
@@ -80,24 +112,23 @@ function draw_moves() {
     let red = "#690202";
     for (let i = 0; i < moves.length; i++) {
         c.beginPath();
-        
+
         if (board[moves[i]] != 0) {
             c.fillStyle = red;
             c.strokeStyle = red;
-            c.arc(moves[i]%8 * width_square + width_square/2, Math.floor(moves[i]/8)*height_square + height_square / 2, width_square / 2.4, 0, 2 * Math.PI)
+            c.arc(moves[i] % 8 * width_square + width_square / 2, Math.floor(moves[i] / 8) * height_square + height_square / 2, width_square / 2.4, 0, 2 * Math.PI)
             c.fill();
-        }
-        else {
+        } else {
             c.fillStyle = green;
             c.strokeStyle = green;
-            c.arc(moves[i]%8 * width_square + width_square/2, Math.floor(moves[i]/8)*height_square + height_square / 2, width_square / 3, 0, 2 * Math.PI)
+            c.arc(moves[i] % 8 * width_square + width_square / 2, Math.floor(moves[i] / 8) * height_square + height_square / 2, width_square / 3, 0, 2 * Math.PI)
             c.lineWidth = 10;
         }
         c.stroke();
     }
 }
 
-function draw_pieces(layout){
+function draw_pieces(layout) {
     let posx = 0;
     let posy = 0;
     for (let i = 0; i < layout.length; i++) {
@@ -105,20 +136,18 @@ function draw_pieces(layout){
         if (piece == "/") {
             posy += height_square;
             posx = 0;
-        }
-        else if (parseInt(piece)){
+        } else if (parseInt(piece)) {
             let total = parseInt(piece) * width_square;
             posx += total;
-        }
-        else{
+        } else {
             draw_piece(piece, posx, posy)
-            posx +=  width_square;  
+            posx += width_square;
         }
     }
     return 0;
 }
 
-function draw_piece(piece, posx, posy){
+function draw_piece(piece, posx, posy) {
     let type = 0;
     let color = 0;
     switch (piece) {
@@ -130,46 +159,55 @@ function draw_piece(piece, posx, posy){
             break
         case "q":
             type = 1, color = 0;
-            break; 
+            break;
         case "Q":
             type = 1, color = 1;
-            break; 
+            break;
         case "b":
             type = 2, color = 0;
-            break; 
+            break;
         case "B":
             type = 2, color = 1;
-            break; 
+            break;
         case "n":
             type = 3, color = 0;
-            break; 
+            break;
         case "N":
             type = 3, color = 1;
-            break; 
+            break;
         case "c":
             type = 4, color = 0;
-            break; 
+            break;
         case "C":
             type = 4, color = 1;
-            break; 
+            break;
         case "p":
             type = 5, color = 0;
-            break; 
+            break;
         case "P":
             type = 5, color = 1;
-            break;    
+            break;
+    }
+    if (main_game_var.current_player == 1) {
+        if (color == 0) {
+            color = 1;
+        } else {
+            color = 0
+        }
     }
     let sprite = new Image();
-    sprite.src = "pieces.png"   
-    c.drawImage(sprite, width_piece * type, height_piece * color, width_piece, height_piece, posx, posy, width_square, height_square)    
+    sprite.src = "pieces.png"
+    c.drawImage(sprite, width_piece * type, height_piece * color, width_piece, height_piece, posx, posy, width_square, height_square)
 }
 
 function draw() {
+    c.clearRect(0, 0, width, height);
     draw_board();
     draw_active()
     draw_pieces(string_board);
+    draw_grabbed();
     requestAnimationFrame(draw);
-}  
+}
 
 function create_board(board) {
     let new_board = [];
@@ -178,16 +216,14 @@ function create_board(board) {
         if (board[i] == "/") {
             for (let j = 0; j < 8 - square_count; j++) {
                 new_board.push(0)
-            }   
+            }
             square_count = 0;
-        }
-        else if(parseInt(board[i])) {
+        } else if (parseInt(board[i])) {
             for (let j = 0; j < parseInt(board[i]); j++) {
                 new_board.push(0);
                 square_count++
             }
-        }
-        else{
+        } else {
             new_board.push(board[i]);
             square_count++
         }
@@ -200,18 +236,17 @@ function stringfy_board(board) {
     for (let i = 0; i < 8; i++) {
         let counter = 0;
         for (let j = 0; j < 8; j++) {
-            if (board[i*8+j] != 0) {
+            if (board[i * 8 + j] != 0) {
                 if (counter != 0) {
                     new_board = new_board.concat(counter);
                     counter = 0;
                 }
-                new_board = new_board.concat(board[i*8+j])
-            }
-            else{
+                new_board = new_board.concat(board[i * 8 + j])
+            } else {
                 counter++
             }
         }
-        if (new_board[new_board.length -1] == "/" || new_board[new_board.length] == undefined) {
+        if (new_board[new_board.length - 1] == "/" || new_board[new_board.length] == undefined) {
             new_board = new_board.concat("8")
         }
         if (i != 7) {
@@ -230,11 +265,8 @@ function get_piece(x, y) {
 function check_moves() {
     switch (board[active]) {
         case "p":
-            moves_pawn(1)
+            moves_pawn(main_game_var.current_player)
             break;
-        // case "P":
-        //     moves_pawn(-1);
-        //     break;
         case "c":
             moves_castle()
             break;
@@ -248,15 +280,15 @@ function check_moves() {
     }
 }
 
-function moves_pawn(color) {
+function moves_pawn(player) {
     moves.push(active + 8 * color);
-    if (active > 7 && active < 16 || active > 47 && active < 56 ) {
+    if (active > 7 && active < 16 || active > 47 && active < 56) {
         moves.push(active + 16 * color)
     }
 }
 
 function moves_castle() {
-    let dir = [Math.floor(active/8), 7 - active%8, 7 - Math.floor(active/8), active%8];
+    let dir = [Math.floor(active / 8), 7 - active % 8, 7 - Math.floor(active / 8), active % 8];
     let counter = -8;
     for (let i = 0; i < dir.length; i++) {
         let prev = active;
@@ -274,12 +306,11 @@ function moves_castle() {
         for (let j = 0; j < dir[i]; j++) {
             prev = prev + counter
             if (blocked(prev)) {
-                moves.push(prev);  
+                moves.push(prev);
                 if (board[moves[moves.length - 1]] != 0) {
                     break;
                 }
-            }
-            else{
+            } else {
                 break;
             }
         }
@@ -292,7 +323,7 @@ function move_bishop() {
     for (let i = 0; i < 4; i++) {
         switch (i) {
             case 0:
-               break;
+                break;
             case 1:
                 counter = -7;
                 break;
@@ -311,12 +342,10 @@ function move_bishop() {
                     if (board[moves[moves.length - 1]] != 0) {
                         break;
                     }
-                }
-                else{
+                } else {
                     break;
                 }
-            }
-            else{
+            } else {
                 break;
             }
             prev = new_move;
@@ -325,13 +354,12 @@ function move_bishop() {
     }
 }
 
-function get_color_square (square) {
-    let row_color = Math.floor(square/8)%2 
-    let column_color = (square%8)%2; 
-    if (row_color == 0 && column_color == 0 || row_color ==1 && column_color == 1) {
+function get_color_square(square) {
+    let row_color = Math.floor(square / 8) % 2
+    let column_color = (square % 8) % 2;
+    if (row_color == 0 && column_color == 0 || row_color == 1 && column_color == 1) {
         return "black";
-    }
-    else{
+    } else {
         return "white";
     }
 }
@@ -340,12 +368,10 @@ function blocked(move) {
     if (board[move] != 0 && move != active) {
         if (board[move] == board[move].toLowerCase()) {
             return false;
-        }
-        else if(board[move] == board[move].toUpperCase()){
+        } else if (board[move] == board[move].toUpperCase()) {
             return true;
         }
-    }
-    else{
+    } else {
         return true
     }
 }
@@ -354,35 +380,82 @@ function set_active(e) {
     moves = [];
     let mouseX = e.clientX - canvas.getBoundingClientRect().left;
     let mouseY = e.clientY - canvas.getBoundingClientRect().top;
-    
+
     active = get_piece(mouseX, mouseY);
+    if (board[active] == 0 || board[active] == board[active].toUpperCase()) {
+        active = undefined;
+        return
+    }
+    active_piece = board[active];
     check_moves();
 }
 
-function move_piece(e) {
+function valid_move(e) {
     let mouseX = e.clientX - canvas.getBoundingClientRect().left;
-    let mouseY = e.clientY - canvas.getBoundingClientRect().top;;
+    let mouseY = e.clientY - canvas.getBoundingClientRect().top;
+    let square = get_piece(mouseX, mouseY)
+    for (let i = 0; i < moves.length; i++) {
+        if (moves[i] == square) {
+            return true;
+        }
+    }
+}
+
+function move_piece(e) {
+    console.log("piece moved" + active);
+    let mouseX = e.clientX - canvas.getBoundingClientRect().left;
+    let mouseY = e.clientY - canvas.getBoundingClientRect().top;
     for (let i = 0; i < moves.length; i++) {
         let square = get_piece(mouseX, mouseY)
         if (moves[i] == square) {
-            board[moves[i]] = board[active];
+            console.log("steppd myself");
+            board[moves[i]] = active_piece;
             board[active] = 0;
+            end_turn()
             string_board = stringfy_board(board)
             active = undefined;
+            active_piece = undefined;
             moves = []
-            return;
         }
     }
-    return set_active(e)
+    if (moves.length != 0) {
+        board[active] = active_piece;
+        string_board = stringfy_board(board)
+    }
+    return
 }
 
 function hold_piece(e) {
     let mouseX = e.clientX - canvas.getBoundingClientRect().left;
     let mouseY = e.clientY - canvas.getBoundingClientRect().top;
-    board[active] = 0;
-    console.log(board);
-    string_board = stringfy_board(board)
+    active_piece = board[active]
+        // board[active] = 0;
+        // string_board = stringfy_board(board)
 
+}
+
+function end_turn() {
+    main_game_var.current_turn += 1;
+    if (main_game_var.current_player === 0) {
+        main_game_var.current_player = 1
+    } else {
+        main_game_var.current_player = 0
+    }
+    reverse_turn(board)
+}
+
+function reverse_turn(board) {
+    for (let i = 0; i < board.length; i++) {
+        let item = board[i];
+        if (typeof item === "string") {
+            if (item == item.toUpperCase()) {
+                item = item.toLowerCase();
+            } else if (item == item.toLowerCase()) {
+                item = item.toUpperCase();
+            }
+        }
+        board[i] = item
+    }
 }
 
 function start() {
@@ -392,4 +465,3 @@ function start() {
 }
 
 start();
-
