@@ -1,7 +1,7 @@
 const canvas = document.getElementsByTagName("canvas")[0];
 const c = canvas.getContext("2d");
-canvas.height = "640";
 canvas.width = "640";
+canvas.height = canvas.width
 const width = canvas.width;
 const height = canvas.height;
 const width_square = width / 8;
@@ -9,7 +9,7 @@ const height_square = height / 8;
 const width_piece = 333;
 const height_piece = 334;
 const start_board = "cnbkqbnc/pppppppp/8/8/8/8/PPPPPPPP/CNBKQBNC";
-var string_board = "cnbkqbnc/c/8/8/8/8/8/CNBKQBNC";
+var string_board = "8/pP/8/3k/8/5K/8/7c";
 // var string_board = start_board
 var board = [];
 var moves = [];
@@ -277,14 +277,28 @@ function check_moves() {
             moves_castle()
             move_bishop()
             break;
+        case "k":
+            move_king()
+            break;
     }
 }
 
 function moves_pawn(player) {
-    moves.push(active + 8 * color);
-    if (active > 7 && active < 16 || active > 47 && active < 56) {
-        moves.push(active + 16 * color)
+    if (player == 0) {
+        if (active < 56 && board[active + 8] == 0 && blocked(active + 8)) moves.push(active + 8);
+        if (active < 56 && board[active + 7] != 0 && blocked(active + 7)) moves.push(active + 7);
+        if (active < 56 && board[active + 9] != 0 && blocked(active + 9)) moves.push(active + 9);
+        if (active > 7 && active < 16 && blocked(active + 16)) moves.push(active + 16);
+    } else {
+        if (active > 7 && board[active - 8] == 0 && blocked(active - 8)) moves.push(active - 8);
+        if (active > 7 && board[active - 7] != 0 && blocked(active - 7)) moves.push(active - 7);
+        if (active > 7 && board[active - 9] != 0 && blocked(active - 9)) moves.push(active - 9);
+        if (active > 47 && active < 56 && blocked(active - 16)) moves.push(active - 16)
     }
+
+    // if (active > 7 && active < 16 || active > 47 && active < 56) {
+    //     moves.push(active + 16)
+    // }
 }
 
 function moves_castle() {
@@ -351,6 +365,13 @@ function move_bishop() {
             prev = new_move;
         }
         prev = active;
+    }
+}
+
+function move_king() {
+    possible_moves = [-1, -7, -8, -9, 1, 7, 8, 9]
+    for (let i = 0; i < possible_moves.length; i++) {
+        if (blocked(active + possible_moves[i]) && 0 < active + possible_moves[i] && active + possible_moves[i] < 64) moves.push(active + possible_moves[i])
     }
 }
 
