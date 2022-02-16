@@ -8,9 +8,9 @@ const width_square = width / 8;
 const height_square = height / 8;
 const width_piece = 333;
 const height_piece = 334;
-const start_board = "cnbkqbnc/pppppppp/8/8/8/8/PPPPPPPP/CNBKQBNC";
-var string_board = "8/pP/8/3k/8/5K/8/7c";
-// var string_board = start_board
+const start_board = "CNBKQBNC/PPPPPPPP/8/8/8/8/pppppppp/cnbqkbnc";
+// var string_board = "8/8/3n/8/5N/8/8/8";
+var string_board = start_board
 var board = [];
 var moves = [];
 var active;
@@ -283,20 +283,23 @@ function check_moves() {
         case "k":
             move_king()
             break;
+        case "n":
+            move_knight()
+            break;
     }
 }
 
 function moves_pawn(player) {
     if (player == 0) {
-        if (active < 56 && board[active + 8] == 0 && blocked(active + 8)) moves.push(active + 8);
-        if (active < 56 && board[active + 7] != 0 && blocked(active + 7)) moves.push(active + 7);
-        if (active < 56 && board[active + 9] != 0 && blocked(active + 9)) moves.push(active + 9);
-        if (active > 7 && active < 16 && blocked(active + 16)) moves.push(active + 16);
-    } else {
         if (active > 7 && board[active - 8] == 0 && blocked(active - 8)) moves.push(active - 8);
         if (active > 7 && board[active - 7] != 0 && blocked(active - 7)) moves.push(active - 7);
         if (active > 7 && board[active - 9] != 0 && blocked(active - 9)) moves.push(active - 9);
         if (active > 47 && active < 56 && blocked(active - 16)) moves.push(active - 16)
+    } else {
+        if (active < 56 && board[active + 8] == 0 && blocked(active + 8)) moves.push(active + 8);
+        if (active < 56 && board[active + 7] != 0 && blocked(active + 7)) moves.push(active + 7);
+        if (active < 56 && board[active + 9] != 0 && blocked(active + 9)) moves.push(active + 9);
+        if (active > 7 && active < 16 && blocked(active + 16)) moves.push(active + 16);
     }
 
     // if (active > 7 && active < 16 || active > 47 && active < 56) {
@@ -373,7 +376,6 @@ function move_bishop() {
 
 function move_king() {
     possible_moves = [-1, 7, -9, 8, -8, 1, -7, 9]
-        // 
     let column = active % 8
     console.log(column);
     if (column == 0) {
@@ -384,6 +386,33 @@ function move_king() {
     for (let i = 0; i < possible_moves.length; i++) {
         if (0 <= active + possible_moves[i] && active + possible_moves[i] < 64 && blocked(active + possible_moves[i])) moves.push(active + possible_moves[i])
 
+    }
+}
+
+function move_knight() {
+    possible_moves = [-10, 6, 15, -17, -15, 17, 10, -6]
+        // -10, 6, -15, 17,  
+        // -17, 15, 10, -6
+        // 15, 17, 6, 10, -15, -17, -6, -10
+    let column = active % 8
+    switch (column) {
+        case 0:
+            possible_moves.splice(0, 4)
+            break
+        case 1:
+            possible_moves.splice(0, 2)
+            break
+        case 6:
+            possible_moves.splice(6, 2)
+            break;
+        case 7:
+            possible_moves.splice(4, 4)
+            break;
+    }
+    console.log(possible_moves);
+
+    for (let i = 0; i < possible_moves.length; i++) {
+        if (0 <= active + possible_moves[i] && active + possible_moves[i] < 64 && blocked(active + possible_moves[i])) moves.push(active + possible_moves[i])
     }
 }
 
@@ -477,6 +506,7 @@ function end_turn() {
     reverse_turn(board)
 }
 
+
 function reverse_turn(board) {
     for (let i = 0; i < board.length; i++) {
         let item = board[i];
@@ -489,6 +519,11 @@ function reverse_turn(board) {
         }
         board[i] = item
     }
+}
+
+function check_mate() {
+    moves_king = []
+
 }
 
 function start() {
