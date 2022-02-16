@@ -263,6 +263,9 @@ function get_piece(x, y) {
 }
 
 function check_moves() {
+    if (moves.length != 0) {
+        return
+    }
     switch (board[active]) {
         case "p":
             moves_pawn(main_game_var.current_player)
@@ -369,12 +372,18 @@ function move_bishop() {
 }
 
 function move_king() {
-    possible_moves = [-1, -7, -8, -9, 1, 7, 8, 9]
-    let row = Math.floor(active / 8)
+    possible_moves = [-1, 7, -9, 8, -8, 1, -7, 9]
+        // 
     let column = active % 8
-    console.log(row, column);
+    console.log(column);
+    if (column == 0) {
+        possible_moves.splice(0, 3)
+    } else if (column == 7) {
+        possible_moves.splice(5, 3)
+    }
     for (let i = 0; i < possible_moves.length; i++) {
         if (0 <= active + possible_moves[i] && active + possible_moves[i] < 64 && blocked(active + possible_moves[i])) moves.push(active + possible_moves[i])
+
     }
 }
 
