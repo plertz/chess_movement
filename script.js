@@ -370,8 +370,11 @@ function move_bishop() {
 
 function move_king() {
     possible_moves = [-1, -7, -8, -9, 1, 7, 8, 9]
+    let row = Math.floor(active / 8)
+    let column = active % 8
+    console.log(row, column);
     for (let i = 0; i < possible_moves.length; i++) {
-        if (blocked(active + possible_moves[i]) && 0 < active + possible_moves[i] && active + possible_moves[i] < 64) moves.push(active + possible_moves[i])
+        if (0 <= active + possible_moves[i] && active + possible_moves[i] < 64 && blocked(active + possible_moves[i])) moves.push(active + possible_moves[i])
     }
 }
 
