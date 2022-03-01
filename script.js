@@ -8,14 +8,19 @@ const width_square = width / 8;
 const height_square = height / 8;
 const width_piece = 333;
 const height_piece = 334;
-const start_board = "CNBKQBNC/PPPPPPPP/8/8/8/8/pppppppp/cnbqkbnc";
+const start_board = "CNBQKBNC/PPPPPPPP/8/8/8/8/pppppppp/cnbqkbnc";
 // var string_board = "8/8/3n/8/5N/8/8/8";
 var string_board = start_board
 var board = [];
+var moved_board = [];
+for(let i=0;i<64;i++)if(i>15&&i<48){moved_board[i]=1}else{moved_board[i]=0};
+console.log(moved_board)
 var moves = [];
 var active;
 var prev_active;
 var active_piece;
+var kings_moved = [0,0]
+var castles_moved = [0,0,0,0]
 
 main_game_var = {
     //current_player == 1 => zwart && current_player == 0 => wit
@@ -387,6 +392,13 @@ function move_king() {
         if (0 <= active + possible_moves[i] && active + possible_moves[i] < 64 && blocked(active + possible_moves[i])) moves.push(active + possible_moves[i])
 
     }
+    if(moved_board[active]==0){
+        if(board[active+1]==0&&board[active+2]==0&&moved_board[active+3]==0){
+            moves.push(active+2)
+        }else if(board[active-1]==0&&board[active-2]==0&&board[active-3]==0&&moved_board[active-4]==0){
+            moves.push(active-2)
+        }
+    }
 }
 
 function move_knight() {
@@ -470,9 +482,21 @@ function move_piece(e) {
     for (let i = 0; i < moves.length; i++) {
         let square = get_piece(mouseX, mouseY)
         if (moves[i] == square) {
+            if(board[active].toLowerCase()=="k"&&moves[i]==active+2){
+                board[moves[i]-1] = board[moves[i]+1];
+                board[moves[i]+1] = 0;
+            }else if(board[active].toLowerCase()=="k"&&moves[i]==active-2){
+                board[moves[i]+1] = board[moves[i]-2];
+                board[moves[i]-2] = 0;
+            }
             console.log("steppd myself");
-            board[moves[i]] = active_piece;
+            if(board[active]=="p"&&(moves[i]<8||moves[i]<55)){
+                board[moves[i]] = "q";
+            }else{
+                board[moves[i]] = active_piece;
+            }
             board[active] = 0;
+            moved_board[active] = 1;
             end_turn()
             string_board = stringfy_board(board)
             active = undefined;
@@ -482,6 +506,7 @@ function move_piece(e) {
     }
     if (moves.length != 0) {
         board[active] = active_piece;
+        console.log(active)
         string_board = stringfy_board(board)
     }
     return
