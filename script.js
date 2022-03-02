@@ -19,8 +19,10 @@ var moves = [];
 var active;
 var prev_active;
 var active_piece;
-var kings_moved = [0,0]
-var castles_moved = [0,0,0,0]
+var kings_moved = [0,0];
+var castles_moved = [0,0,0,0];
+var en_passant = false;
+var Player = 0;
 
 main_game_var = {
     //current_player == 1 => zwart && current_player == 0 => wit
@@ -36,6 +38,10 @@ Mouse = {
     offsetX: 0,
     offsetY: 0
 }
+
+function limit(num, min=0, max=10){if (num<min){return min;}else if(num>max){return max;}return num;}
+function mod(num, max=10){if(num>max){return num%max}return num}
+function posify(num){if(num<0){return num*-1}return num}
 
 canvas.addEventListener("mousedown", function(e) {
     // if (active == undefined) {
@@ -299,12 +305,16 @@ function moves_pawn(player) {
         if (active > 7 && board[active - 8] == 0 && blocked(active - 8)) moves.push(active - 8);
         if (active > 7 && board[active - 7] != 0 && blocked(active - 7)) moves.push(active - 7);
         if (active > 7 && board[active - 9] != 0 && blocked(active - 9)) moves.push(active - 9);
-        if (active > 47 && active < 56 && blocked(active - 16)) moves.push(active - 16)
+        if (active > 7 && board[active + 1] == "P" && blocked(active + 1)) {moves.push(active - 7);en_passant=true}
+        if (active > 7 && board[active - 1] == "P" && blocked(active - 1)) {moves.push(active - 9);en_passant=true}
+        if (active > 47 && active < 56 && blocked(active - 16) && board[active-16]==0) moves.push(active - 16)
     } else {
         if (active < 56 && board[active + 8] == 0 && blocked(active + 8)) moves.push(active + 8);
         if (active < 56 && board[active + 7] != 0 && blocked(active + 7)) moves.push(active + 7);
         if (active < 56 && board[active + 9] != 0 && blocked(active + 9)) moves.push(active + 9);
-        if (active > 7 && active < 16 && blocked(active + 16)) moves.push(active + 16);
+        if (active < 56 && board[active - 1] == "P" && blocked(active - 1)) {moves.push(active + 7);en_passant=true}
+        if (active < 56 && board[active + 1] == "P" && blocked(active + 1)) {moves.push(active + 9);en_passant=true}
+        if (active > 7 && active < 16 && blocked(active + 16) && board[active+16]==0) moves.push(active + 16);
     }
 
     // if (active > 7 && active < 16 || active > 47 && active < 56) {
@@ -482,6 +492,14 @@ function move_piece(e) {
     for (let i = 0; i < moves.length; i++) {
         let square = get_piece(mouseX, mouseY)
         if (moves[i] == square) {
+            if (en_passant){
+                let temp = posify(moves[i]-active)
+                if (temp == 7){
+                    board[active-((Player*2)-1)] = 0;
+                }else if (temp == 9){
+                    board[active+((Player*2)-1)] = 0;
+                }
+            }
             if(board[active].toLowerCase()=="k"&&moves[i]==active+2){
                 board[moves[i]-1] = board[moves[i]+1];
                 board[moves[i]+1] = 0;
@@ -490,7 +508,7 @@ function move_piece(e) {
                 board[moves[i]-2] = 0;
             }
             console.log("steppd myself");
-            if(board[active]=="p"&&(moves[i]<8||moves[i]<55)){
+            if(board[active]=="p"&&(moves[i]<8||moves[i]>55)){
                 board[moves[i]] = "q";
             }else{
                 board[moves[i]] = active_piece;
@@ -528,6 +546,8 @@ function end_turn() {
     } else {
         main_game_var.current_player = 0
     }
+    Player = mod(Player+1, 1)
+    console.log(Player)
     reverse_turn(board)
 }
 
