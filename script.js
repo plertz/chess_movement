@@ -14,7 +14,6 @@ var string_board = start_board
 var board = [];
 var moved_board = [];
 for(let i=0;i<64;i++)if(i>15&&i<48){moved_board[i]=1}else{moved_board[i]=0};
-console.log(moved_board)
 var moves = [];
 var active;
 var prev_active;
@@ -28,6 +27,7 @@ main_game_var = {
     //current_player == 1 => zwart && current_player == 0 => wit
     current_player: 0,
     current_turn: 1,
+    game_over: 0,
 }
 
 var down = false;
@@ -41,29 +41,34 @@ Mouse = {
 
 function limit(num, min=0, max=10){if (num<min){return min;}else if(num>max){return max;}return num;}
 function mod(num, max=10){if(num>max){return num%max}return num}
-function posify(num){if(num<0){return num*-1}return num}
+function absolute(num){if(num<0){return num*-1}return num}
+function iterate(max, value){let temp = [];for(let i=0;i<max;i++){temp.push(value)}return temp}
 
 canvas.addEventListener("mousedown", function(e) {
     // if (active == undefined) {
-    if (!valid_move(e)) {
-        down = true;
-        canvas.style.cursor = "grabbing";
-        set_active(e)
-        hold_piece(e)
-        Mouse.x = e.clientX - canvas.getBoundingClientRect().left;
-        Mouse.y = e.clientY - canvas.getBoundingClientRect().top
-        Mouse.offsetX = e.x - canvas.getBoundingClientRect().left - (active % 8 * width_square);
-        Mouse.offsetY = e.y - canvas.getBoundingClientRect().top - (Math.floor(active / 8) * height_square);
-        console.log("mousedown");
+    if(main_game_var.game_over==0){
+        if (!valid_move(e)) {
+            down = true;
+            canvas.style.cursor = "grabbing";
+            set_active(e)
+            hold_piece(e)
+            Mouse.x = e.clientX - canvas.getBoundingClientRect().left;
+            Mouse.y = e.clientY - canvas.getBoundingClientRect().top
+            Mouse.offsetX = e.x - canvas.getBoundingClientRect().left - (active % 8 * width_square);
+            Mouse.offsetY = e.y - canvas.getBoundingClientRect().top - (Math.floor(active / 8) * height_square);
+            console.log("mousedown");
+        }
     }
 })
 
 window.addEventListener("mouseup", function(e) {
-    console.log("mouseup");
-    down = false;
-    canvas.style.cursor = "pointer";
-    check_moves()
-    move_piece(e)
+    if(main_game_var.game_over==0){
+        console.log("mouseup");
+        down = false;
+        canvas.style.cursor = "pointer";
+        check_moves()
+        move_piece(e)
+    }
 })
 
 // canvas.addEventListener("click", function(e) {
@@ -77,9 +82,11 @@ window.addEventListener("mouseup", function(e) {
 // })
 
 canvas.addEventListener("mousemove", function(e) {
-    if (down) {
-        Mouse.x = e.clientX - canvas.getBoundingClientRect().left;
-        Mouse.y = e.clientY - canvas.getBoundingClientRect().top
+    if(main_game_var.game_over==0){
+        if (down) {
+            Mouse.x = e.clientX - canvas.getBoundingClientRect().left;
+            Mouse.y = e.clientY - canvas.getBoundingClientRect().top
+        }
     }
 })
 
@@ -217,6 +224,13 @@ function draw() {
     draw_active()
     draw_pieces(string_board);
     draw_grabbed();
+    if(main_game_var.game_over==1){
+        console.log("Player 2 won!");
+        main_game_var.game_over=3;
+    }else if(main_game_var.game_over==2){
+        console.log("Player 1 won!");
+        main_game_var.game_over=3;
+    }
     requestAnimationFrame(draw);
 }
 
@@ -493,7 +507,7 @@ function move_piece(e) {
         let square = get_piece(mouseX, mouseY)
         if (moves[i] == square) {
             if (en_passant){
-                let temp = posify(moves[i]-active)
+                let temp = absolute(moves[i]-active)
                 if (temp == 7){
                     board[active-((Player*2)-1)] = 0;
                 }else if (temp == 9){
@@ -540,15 +554,16 @@ function hold_piece(e) {
 }
 
 function end_turn() {
+    no_king();
     main_game_var.current_turn += 1;
     if (main_game_var.current_player === 0) {
         main_game_var.current_player = 1
     } else {
         main_game_var.current_player = 0
     }
-    Player = mod(Player+1, 1)
-    console.log(Player)
-    reverse_turn(board)
+    Player = mod(Player+1, 1);
+    reverse_turn(board);
+    console.log(main_game_var.game_over)
 }
 
 
@@ -566,9 +581,20 @@ function reverse_turn(board) {
     }
 }
 
-function check_mate() {
-    moves_king = []
-
+function no_king() {
+    if(Player == 0){
+        if(board.indexOf("k")==-1){
+            main_game_var.game_over = 1;
+        }else if(board.indexOf("K")==-1){
+            main_game_var.game_over = 2;
+        }
+    }else{
+        if(board.indexOf("k")==-1){
+            main_game_var.game_over = 2;
+        }else if(board.indexOf("K")==-1){
+            main_game_var.game_over = 1;
+        }
+    }
 }
 
 function start() {
