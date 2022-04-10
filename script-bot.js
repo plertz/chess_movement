@@ -22,7 +22,7 @@ var kings_moved = [0,0];
 var castles_moved = [0,0,0,0];
 var en_passant = false;
 var Player = 0;
-var pvb = false;
+var pvb = true;
 var square;
 var warning = [];
 var move_number = 0;
@@ -512,6 +512,7 @@ function blocked(move) {
 }
 
 function set_active(e) {
+    moves = [];
     let mouseX = e.clientX - canvas.getBoundingClientRect().left;
     let mouseY = e.clientY - canvas.getBoundingClientRect().top;
 
@@ -521,7 +522,7 @@ function set_active(e) {
         return
     }
     active_piece = board[active];
-    check_moves(main_game_var.current_player);
+    check_moves();
 }
 
 function valid_move(e) {
@@ -715,7 +716,7 @@ function end_turn() {
     reverse_turn(board);
     en_passant=false;
     draw_pieces(stringfy_board(board));
-    if(main_game_var.current_player == 1 && pvb){
+    if(main_game_var.current_player == 1){
         botPlay();
     }
 }
