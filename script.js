@@ -26,9 +26,6 @@ var pvb = false;
 var square;
 var warning = [];
 var move_number = 0;
-var botDifficulty = randomnum(3);
-botDifficulty = 1;
-//var botDifficulty = 0;
 
 main_game_var = {
     //current_player == 1 => zwart && current_player == 0 => wit
@@ -573,7 +570,6 @@ function move_piece(e=null, mouseX=-1, mouseY=-1) {
             }catch{}
             board[active] = 0;
             moved_board[active] = 1;
-            check_moves_bot(moves[i]);
             warning = moves;
             string_board = stringfy_board(board)
             end_turn();
@@ -595,109 +591,6 @@ function hold_piece(e) {
 
 }
 
-function getAllSpaces(pieces){
-    let from = [];
-    let highest = -1;
-    lowest = 64;
-    moves = [];
-    for(let i=0;i<pieces.length;i++){
-        from.push(pieces[i]);
-        check_moves_bot(pieces[i]);
-    }
-    for(let i=0;i<moves.length;i++){
-        if(pieceValueOther(moves[i])>highest || (randomnum(Math.floor(pieces.length/3))>Math.floor(pieces.length/3.2) && pieceValueOther(moves[i])==highest)){
-            highest = moves[i];
-        }else if(randomnum(Math.floor(pieces.length/3))>Math.floor(pieces.length/4.05)){
-            highest = moves[i];
-        }
-    }
-    for(let i=0;i<from.length;i++){
-        moves = [];
-        check_moves_bot(from[i]);
-        for(let j=0;j<moves.length;j++){
-            if(moves[j]==highest && pieceValue(board[from[i]])<=lowest){
-                lowest = from[i];
-            }
-        }
-    }
-    return check_warning(lowest, highest)
-}
-
-function check_warning(lowest, highest){
-    console.log(lowest);
-    //for(let i=0;i<warning.length;i++){
-    //    if(warning[i]!=0){
-    //        console.log(16-pieceValueOther(warning[i]));
-    //        if(lowest > 16-pieceValueOther(warning[i])){
-    //            lowest = warning[i];
-    //            check_moves_bot(lowest);
-    //            highest = moves[randomnum(moves.length)];
-    //        }
-    //    }
-    //}
-    return [lowest, highest]
-}
-
-function botPlay(){
-    no_king();
-    switch(botDifficulty){
-        case 1:
-            bot1();
-    }
-}
-
-function bot1(){
-    let botPieces = [];
-    for(let i=0;i<64;i++){
-        let piece = board[i]
-        try{
-            if(equalslowercase(piece))botPieces.push(i);
-        }catch{
-            piece = piece;
-        }
-    }
-    try{
-        let temp = getAllSpaces(botPieces);
-        active = temp[0];
-        moves = [temp[1]];
-        active_piece = board[active];
-        square = moves[0];
-    }catch{
-        botPlay();
-    }
-    console.log(active);
-    console.log(moves);
-    if(moves.length!=0){
-        move_piece();
-    }else{
-        botPlay();
-    }
-}
-
-function check_moves_bot(index){
-    switch (board[index]) {
-        case "p":
-            moves_pawn(1, index);
-            break;
-        case "c":
-            moves_castle(index);
-            break;
-        case "b":
-            move_bishop(index);
-            break;
-        case "q":
-            moves_castle(index);
-            move_bishop(index);
-            break;
-        case "k":
-            move_king(index);
-            break;
-        case "n":
-            move_knight(index);
-            break;
-    }
-}
-
 function end_turn() {
     move_number++;
     console.log(move_number);
@@ -716,9 +609,6 @@ function end_turn() {
     reverse_turn(board);
     en_passant=false;
     draw_pieces(stringfy_board(board));
-    if(main_game_var.current_player == 1 && pvb){
-        botPlay();
-    }
 }
 
 
@@ -755,7 +645,6 @@ function no_king() {
 function start() {
     board = create_board(string_board);
     console.log(board);
-    console.log(botDifficulty);
     draw();
 }
 
