@@ -267,7 +267,7 @@ function draw() {
         end_of_game();
     }else if(main_game_var.game_over==2){
         console.log("Player 1 won!");
-        main_game_var.game_over=3;
+        main_game_var.game_over=4;
         end_of_game();
     }
     requestAnimationFrame(draw);

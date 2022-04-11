@@ -512,6 +512,7 @@ function blocked(move) {
 }
 
 function set_active(e) {
+    moves = [];
     let mouseX = e.clientX - canvas.getBoundingClientRect().left;
     let mouseY = e.clientY - canvas.getBoundingClientRect().top;
 
